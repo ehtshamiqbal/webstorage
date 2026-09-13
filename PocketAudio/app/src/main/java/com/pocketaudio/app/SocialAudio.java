@@ -21,6 +21,14 @@ final class SocialAudio {
         if(ready)return;
         YoutubeDL.getInstance().init(c.getApplicationContext());
         FFmpeg.getInstance().init(c.getApplicationContext());
+        // Install the bundled, checksum-verified engine once for this app version, including upgrades from V5.
+        if(c.getSharedPreferences("engine",0).getInt("bundled",0)<6){
+            File engine=new File(c.getNoBackupFilesDir(),"youtubedl-android/yt-dlp/yt-dlp");
+            File temp=new File(engine.getParentFile(),"engine-new");
+            try(InputStream in=c.getAssets().open("yt-dlp")){Files.copy(in,temp.toPath(),StandardCopyOption.REPLACE_EXISTING);}
+            Files.move(temp.toPath(),engine.toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
+            c.getSharedPreferences("engine",0).edit().putInt("bundled",6).apply();
+        }
         ready=true;
     }
     static void warmUp(Context c){new Thread(()->{try{initialize(c);}catch(Exception|LinkageError ignored){}},"media-warmup").start();}
@@ -46,6 +54,7 @@ final class SocialAudio {
             YoutubeDLRequest r=new YoutubeDLRequest(url);
             r.addOption("--cache-dir",new File(c.getNoBackupFilesDir(),"extractor-cache").getAbsolutePath());
             r.addOption("--write-info-json");
+            if(PlatformSession.available(c)&&PlatformSession.supports(url))r.addOption("--cookies",PlatformSession.file(c).getAbsolutePath());
             r.addOption("--no-playlist");r.addOption("--playlist-items","1");
             r.addOption("--socket-timeout","20");r.addOption("--retries","2");r.addOption("--extractor-retries","2");
             r.addOption("--max-filesize",String.valueOf(Math.max(1,c.getCacheDir().getUsableSpace()/3)));r.addOption("--no-mtime");r.addOption("--newline");
@@ -81,9 +90,11 @@ final class SocialAudio {
         } catch(com.yausername.youtubedl_android.YoutubeDLException e){
             if(p.cancelled())throw new CancellationException();
             String err=String.valueOf(e.getMessage()).toLowerCase(Locale.ROOT);
-            if(err.contains("sign in")||err.contains("login")||err.contains("cookies")||err.contains("private")||err.contains("confirm you're not a bot"))
-                throw new IOException("The platform requires sign-in or has blocked this request. Private/restricted videos cannot be downloaded without login. Try a public video or retry later on your normal connection.");
-            if(err.contains("429")||err.contains("rate-limit")||err.contains("rate limit"))throw new IOException("The platform is temporarily limiting downloads. Wait a while and try again.");
+            if(err.contains("429")||err.contains("rate-limit")||err.contains("rate limit"))throw new IOException("The platform is temporarily limiting requests. Wait before trying again. This is not a missing app login.");
+            if(err.contains("private video")||err.contains("private account")||err.contains("members-only")||err.contains("premium-only"))throw new IOException("This content needs permission from its owner or the correct platform account. The app cannot unlock it.");
+            if(err.contains("sign in")||err.contains("login required")||err.contains("login_required")||err.contains("confirm you're not a bot")||err.contains("authentication required"))
+                throw new IOException("The platform requires an authenticated session or a verification check. Open the video on the platform first. You can optionally import your own browser session in Settings → Platform connection. Access is still controlled by the platform.");
+            if(err.contains("javascript")||err.contains("challenge solving")||err.contains("signature extraction"))throw new IOException("The platform player changed. Use Settings → Update video support, then try again. If it persists, share the video URL and this message.");
             if(err.contains("unsupported url"))throw new IOException("This link is not supported. Paste the full public YouTube video, Short, Instagram Reel/post, or direct MP4 URL.");
             if(err.contains("403"))throw new IOException("The video host refused the download. Try again later with a fresh public link; some videos require login.");
             if(err.contains("unavailable")||err.contains("not available"))throw new IOException("This video is unavailable, removed, or restricted in your region.");

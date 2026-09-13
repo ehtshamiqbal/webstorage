@@ -24,7 +24,9 @@ jobs:
       - name: Install Android build tools
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;28.0.13004108' 'cmake;3.22.1'
       - name: Download MP3 encoder source
-        run: python3 scripts/prepare_lame.py
+        run: |
+          python3 scripts/prepare_lame.py
+          python3 scripts/prepare_engine.py
       - name: Build and lint
         run: gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease
       - name: Verify APK signature
@@ -70,9 +72,11 @@ jobs:
           profile: pixel_2
           working-directory: PocketAudio
           disable-animations: true
-          script: python3 scripts/install29.py
+          script: python3 scripts/verify_install.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: PocketAudio-Verification
-          path: PocketAudio/smoke-results
+          path: |
+            PocketAudio/smoke-results
+            PocketAudio/install-results
