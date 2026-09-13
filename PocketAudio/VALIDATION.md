@@ -1,19 +1,24 @@
-# V5 validation
+# V6 validation
+
+Application source commit: 89ec46567dff68839c204198d25a2e4d63eeb5f6. Build/test workflow: 34764134571; job 103741982070.
 
 ## Passed
 
-- Release compilation, Android lint, APK signature verification and ZIP alignment: workflow 34461041353, application source commit 57cce5a87d7549fc31cdd5542b83d6d072bfacba.
-- Android 15 emulator: MP3, H.264/AAC 1080p60, VP9/Opus and AV1/Opus conversion into H.264/AAC, original-title filenames, separate tabs and About.
-- Android-native MediaMetadataRetriever decoded visible frames from all three video outputs (ANDROID_VISIBLE_FRAMES_PASS count=3).
-- Android 10 emulator: fresh installation, same-certificate update and crash-free launch after both, workflow 34462744603, job 102824139004.
-- Final distribution APK independently signed and verified with the permanent release certificate. Application payload is unchanged from the tested release.
-- Distribution SHA-256: fb066595cd567c815cfb2bae296e0c34bde64d73da80289582ef3a264bf12f1c.
-- Release certificate SHA-256: 5271ac53585666226567fdaf1cf326ace068b9cb12aa79945d14aab278f8810b.
+- Release compilation, Android lint, APK signature and ZIP alignment checks.
+- Android 15 emulator: MP3, H.264/AAC 1080p60, VP9/Opus and AV1/Opus converted to Gallery-safe H.264/AAC; title-derived filenames; separate tabs; draft/quality restoration; readable About.
+- Android-native decoding of visible frames from all three saved video fixtures.
+- Instrumentation verifies the active bundled engine version is 2026.08.19.
+- Session checks: domain boundary, valid import, invalid import preserves the existing session, and removal. These use dummy cookies; authenticated platform access was not tested.
+- Android 10 emulator: fresh release installation, same-certificate replacement and crash-free launch after each.
+- Screenshots inspected on Android 10 and 15 for layout/readability.
+- Final signature verified with the V5 permanent release certificate; all application payload bytes unchanged after re-signing. CI device tests use the CI certificate.
+- ARM64 ELF load-segment alignment is at least 16 KB. No 16 KB physical-device test is claimed.
 
-## Scope and limitations
+## Final artifact
 
-Tests ran on emulators, not the user's second physical phone. CI install tests used the CI certificate; the final certificate was verified separately. The original Android 10 combined media/UI test installed and opened the app but failed to obtain a UIAutomator XML dump. The independent install/update test then passed; Android 10 full media automation is not claimed.
+159937510 bytes. SHA-256: d2b69b77d7c676d52889c2de15dff523d75f7ba70da81c87f41e37fafc32b29a.
+Certificate SHA-256: 5271ac53585666226567fdaf1cf326ace068b9cb12aa79945d14aab278f8810b.
 
-The user's failing YouTube file was not supplied. Codec compatibility is the inferred black-screen cause; Gallery-safe conversion addresses this class and passed AV1/VP9 fixture tests. Re-download using 1080p Gallery safe to obtain a compatible file. High-resolution Original modes retain device/player limitations.
+## Limits
 
-No claim is made of instant downloads, every platform, private/restricted links, or successful installation on every Android device. Android 9 and older are unsupported.
+The user's failing YouTube/Instagram URL was not supplied, so that exact failure was not reproduced or verified fixed. Media tests use controlled public-style local HTTP fixtures, not live social-platform accounts. Server-side login, permissions and anti-bot restrictions cannot be removed by this app. Cookie import does not guarantee platform acceptance. Android 9 and older are unsupported; installation and playback on every phone are not guaranteed. The UI is an Android interpretation with cached environmental refraction, not Apple's proprietary renderer.
