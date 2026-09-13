@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
         Drawable d=glass(18,true);if(primary){GradientDrawable g=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0xFF4195F1,0xFF1263D7});g.setCornerRadius(dp(18));d=g;}
         b.setBackground(ripple(d,18));return b;}
     private EditText input(String hint,int id){EditText e=new EditText(this);e.setId(id);e.setHint(hint);e.setTextColor(ink);e.setHintTextColor(muted);e.setTextSize(15);e.setSingleLine(true);e.setPadding(dp(13),0,dp(13),0);e.setBackground(ripple(glass(14,false),14));return e;}
-    private LinearLayout card(){LinearLayout l=column();l.setPadding(dp(16),dp(16),dp(16),dp(16));l.setBackground(glass(24,true));l.setElevation(dp(2));return l;}
+    private LinearLayout card(){LinearLayout l=column();l.setPadding(dp(16),dp(16),dp(16),dp(16));l.setBackground(glass(24,true));l.setElevation(dp(5));return l;}
     private ScrollView scrolling(View child){ScrollView s=new ScrollView(this);s.setFillViewport(true);s.setClipToPadding(false);s.setPadding(dp(20),dp(6),dp(20),dp(12));s.setVerticalScrollBarEnabled(false);s.addView(child);return s;}
     public void onCreate(Bundle state){
         setTheme(R.style.AppTheme);super.onCreate(state);
@@ -65,9 +65,9 @@ public class MainActivity extends Activity {
         pages=new FrameLayout(this);root.addView(pages,new LinearLayout.LayoutParams(-1,0,1));
         screens=new View[]{buildHome(),buildHistory(),buildSettings()};for(View s:screens)pages.addView(s,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout nav=new LinearLayout(this);nav.setPadding(dp(5),dp(5),dp(5),dp(5));nav.setBackground(glass(28,true));nav.setElevation(dp(5));
-        tabs=new Button[3];String[] names={"↓  Download","▤  Recent","⚙  Settings"};
-        for(int j=0;j<3;j++){final int index=j;tabs[j]=button(names[j],false);tabs[j].setTextSize(13);nav.addView(tabs[j],new LinearLayout.LayoutParams(0,dp(48),1));tabs[j].setOnClickListener(v->selectTab(index,true));}
-        LinearLayout.LayoutParams navLp=new LinearLayout.LayoutParams(-1,dp(58));navLp.setMargins(dp(16),dp(4),dp(16),dp(10));root.addView(nav,navLp);
+        tabs=new Button[3];String[] names={"Download","Recent","Settings"};
+        for(int j=0;j<3;j++){final int index=j;tabs[j]=button(names[j],false);tabs[j].setTextSize(11);tabs[j].setCompoundDrawables(null,new NavIcon(j,dp(21)),null,null);tabs[j].setCompoundDrawablePadding(dp(3));nav.addView(tabs[j],new LinearLayout.LayoutParams(0,dp(56),1));tabs[j].setOnClickListener(v->selectTab(index,true));}
+        LinearLayout.LayoutParams navLp=new LinearLayout.LayoutParams(-1,dp(66));navLp.setMargins(dp(16),dp(4),dp(16),dp(10));root.addView(nav,navLp);
         setContentView(scene);
         SharedPreferences prefs=getSharedPreferences("draft",0);int savedMode=state!=null?state.getInt("mode"):prefs.getInt("mode",0);
         pendingQuality=state!=null?state.getInt("quality",savedMode==1?2:1):prefs.getInt("quality",savedMode==1?2:1);
@@ -120,8 +120,8 @@ public class MainActivity extends Activity {
         Button disconnect=button("Remove saved session",false);session.addView(disconnect);disconnect.setOnClickListener(v->{if(ConvertService.busy||importingSession)return;try{PlatformSession.clear(this);sessionStatus.setText("No browser session saved.");}catch(Exception e){Toast.makeText(this,"Could not remove session. Retry.",Toast.LENGTH_SHORT).show();}});
         sessionStatus=text(PlatformSession.available(this)?"Session saved on this phone only.":"No browser session saved.",12,muted,false);gap(session,8);session.addView(sessionStatus);
         gap(l,14);LinearLayout storage=card();l.addView(storage);storage.addView(text("Saved where you need it",18,ink,true));gap(storage,8);storage.addView(text("Videos → Gallery / Movies / PocketMedia\nAudio → Music / PocketMedia\n\nGallery-safe downloads use H.264 video and AAC audio, up to 1080p. A compatible source downloads faster; other codecs need conversion.\n\n4K, 6K, 8K and Best retain original codecs. Some phone galleries cannot play these files. Use a compatible player or download again at 1080p Gallery safe.\n\nPrivate, login-required and protected videos may not download. Platforms may also limit requests.",13,muted,false));
-        gap(l,16);Button about=button("About & open-source licenses",false);l.addView(about);about.setOnClickListener(v->about());gap(l,10);l.addView(text("POCKET MEDIA 6.0  ·  LIQUID GLASS",11,muted,true));return scrolling(l);}
-    private void selectTab(int index,boolean animate){selectedTab=Math.max(0,Math.min(2,index));for(int j=0;j<3;j++){screens[j].setVisibility(j==selectedTab?View.VISIBLE:View.GONE);tabs[j].setTextColor(j==selectedTab?accent:muted);tabs[j].setBackground(ripple(j==selectedTab?glass(23,true):shape(Color.TRANSPARENT,23),23));tabs[j].setSelected(j==selectedTab);}if(selectedTab==1)refreshHistory();
+        gap(l,16);Button about=button("About & open-source licenses",false);l.addView(about);about.setOnClickListener(v->about());gap(l,10);l.addView(text("POCKET MEDIA 7.0  ·  LIQUID GLASS",11,muted,true));return scrolling(l);}
+    private void selectTab(int index,boolean animate){selectedTab=Math.max(0,Math.min(2,index));for(int j=0;j<3;j++){screens[j].setVisibility(j==selectedTab?View.VISIBLE:View.GONE);tabs[j].setTextColor(j==selectedTab?accent:muted);tabs[j].setBackground(ripple(j==selectedTab?glass(23,true):shape(Color.TRANSPARENT,23),23));tabs[j].setSelected(j==selectedTab);tabs[j].getCompoundDrawables()[1].setTint(j==selectedTab?accent:muted);}if(selectedTab==1)refreshHistory();
         if(animate){((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(link.getWindowToken(),0);if(android.animation.ValueAnimator.areAnimatorsEnabled()){View active=screens[selectedTab];active.animate().cancel();active.setAlpha(0.6f);active.animate().alpha(1).setDuration(140).start();}}}
     private void start(){if(ConvertService.busy||pendingStart||SocialAudio.updating||importingSession)return;
         try{link.setText(ConvertService.normalize(link.getText().toString()));}catch(Exception e){link.setError("Paste a full public video URL");link.requestFocus();return;}
@@ -145,7 +145,7 @@ public class MainActivity extends Activity {
         }catch(Exception e){Toast.makeText(this,"File unavailable, or no compatible player. Check Music / Movies → PocketMedia in Files.",Toast.LENGTH_LONG).show();}}
     private void about(){
         LinearLayout content=column();content.setPadding(dp(22),dp(20),dp(22),dp(22));
-        content.addView(text("Pocket Media",26,ink,true));gap(content,4);content.addView(text("Version 6.0  ·  Made for your moments",13,muted,false));gap(content,22);
+        content.addView(text("Pocket Media",26,ink,true));gap(content,4);content.addView(text("Version 7.0  ·  Made for your moments",13,muted,false));gap(content,22);
         aboutSection(content,"How it works","Paste a public video link and choose audio or video. The original platform title becomes the filename automatically. Processing happens on your phone.");
         aboutSection(content,"Playback & quality","Choose 720p or 1080p Gallery safe for H.264 video with AAC audio. Other codecs are converted only when needed. Original-quality options retain the source codecs; playback support varies by phone. No artificial upscaling.");
         aboutSection(content,"Storage & privacy","Videos are saved in Movies / PocketMedia; audio in Music / PocketMedia. Temporary files are removed after completion or handled cancellation. No app account, ads or analytics. Optional browser sessions stay in private phone storage and are excluded from backup. The video platform receives requests from your connection.");

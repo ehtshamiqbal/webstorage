@@ -3,7 +3,7 @@ import pathlib, subprocess as sp, time, json
 root = pathlib.Path(__file__).resolve().parents[1]
 out = root / 'install-results'
 out.mkdir(exist_ok=True)
-apk = root / 'app/build/outputs/apk/release/app-release.apk'
+apk = root / 'app/build/outputs/apk/release/app-x86_64-release.apk'
 def adb(*args):
     return sp.check_output(['adb', *args], text=True, stderr=sp.STDOUT)
 def launch(name):

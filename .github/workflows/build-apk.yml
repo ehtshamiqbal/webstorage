@@ -29,14 +29,16 @@ jobs:
           python3 scripts/prepare_engine.py
       - name: Build and lint
         run: gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease
+      - name: Compact ABI packages without changing runtime codecs
+        run: python3 scripts/compact_apks.py
       - name: Verify APK signature
-        run: "$ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk"
+        run: "$ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-x86_64-release.apk"
       - name: Stage signing tool and validate APK packaging
         run: |
           mkdir -p signing-tools
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" signing-tools/apksigner.jar
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 app/build/outputs/apk/release/app-release.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 app/build/outputs/apk/release/app-x86_64-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-x86_64-release.apk
       - uses: actions/upload-artifact@v4
         with:
           name: PocketMedia-Signing-Tool
@@ -44,7 +46,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: PocketAudio-APK
-          path: PocketAudio/app/build/outputs/apk/release/app-release.apk
+          path: PocketAudio/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
       - name: Install media verification tools
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
@@ -80,3 +82,4 @@ jobs:
           path: |
             PocketAudio/smoke-results
             PocketAudio/install-results
+            PocketAudio/size-report.json

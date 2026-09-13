@@ -25,7 +25,7 @@ final class SocialAudio {
         if(c.getSharedPreferences("engine",0).getInt("bundled",0)<6){
             File engine=new File(c.getNoBackupFilesDir(),"youtubedl-android/yt-dlp/yt-dlp");
             File temp=new File(engine.getParentFile(),"engine-new");
-            try(InputStream in=c.getAssets().open("yt-dlp")){Files.copy(in,temp.toPath(),StandardCopyOption.REPLACE_EXISTING);}
+            try(InputStream in=c.getResources().openRawResource(com.pocketaudio.app.R.raw.ytdlp)){Files.copy(in,temp.toPath(),StandardCopyOption.REPLACE_EXISTING);}
             Files.move(temp.toPath(),engine.toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
             c.getSharedPreferences("engine",0).edit().putInt("bundled",6).apply();
         }

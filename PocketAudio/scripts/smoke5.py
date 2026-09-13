@@ -27,7 +27,7 @@ class MediaHandler(http.server.SimpleHTTPRequestHandler):
   try:super().do_GET()
   except (BrokenPipeError,ConnectionResetError):pass
 server=http.server.ThreadingHTTPServer(('0.0.0.0',8765),functools.partial(MediaHandler,directory=str(fixtures)));threading.Thread(target=server.serve_forever,daemon=True).start()
-print(adb('install','-r',str(root/'app/build/outputs/apk/release/app-release.apk')))
+print(adb('install','-r',str(root/'app/build/outputs/apk/release/app-x86_64-release.apk')))
 adb('shell','pm','clear','com.pocketaudio.app');adb('shell','pm','grant','com.pocketaudio.app','android.permission.POST_NOTIFICATIONS')
 print(adb('shell','am','start','-W','-n','com.pocketaudio.app/.MainActivity'));time.sleep(4)
 for retry in range(8):
@@ -39,8 +39,8 @@ for retry in range(8):
 else:raise RuntimeError('Input missing')
 shot('home');assert not any(n.attrib.get('resource-id','').endswith('/name_input') for n in screen().iter('node'))
 # Separate screens; the download form must not leak into Recent or Settings.
-tap(seek('▤  Recent'));seek('Your first save starts here');assert not any(n.attrib.get('resource-id','').endswith('/link_input') for n in screen().iter('node'));shot('recent-empty')
-tap(seek('⚙  Settings'));seek('Update video support');shot('settings');tap(seek('↓  Download'))
+tap(seek('Recent'));seek('Your first save starts here');assert not any(n.attrib.get('resource-id','').endswith('/link_input') for n in screen().iter('node'));shot('recent-empty')
+tap(seek('Settings'));seek('Update video support');shot('settings');tap(seek('Download'))
 results=[]
 for label,width,height,fps in [('audio',320,240,24),('1080p60',1920,1080,60),('VP9',640,360,24),('AV1',640,360,24)]:
  video=label!='audio'
@@ -63,7 +63,7 @@ for label,width,height,fps in [('audio',320,240,24),('1080p60',1920,1080,60),('V
  tree=screen();assert any(n.attrib.get('text') in ('Working…','Saved · View in Recent') for n in tree.iter('node')),ET.tostring(tree)
  assert first_request.wait(40),'Extractor did not contact host promptly';request_seconds=time.monotonic()-start
  shot('active-'+label)
- tap(seek('▤  Recent'));seek('Your collection');tap(seek('↓  Download'))
+ tap(seek('Recent'));seek('Your collection');tap(seek('Download'))
  folder='/sdcard/Movies/PocketMedia' if video else '/sdcard/Music/PocketMedia'
  for retry in range(90):
   time.sleep(2);paths=[x for x in adb('shell',f'find {folder} -type f 2>/dev/null || true').splitlines() if x.endswith('.mp4' if video else '.mp3') and title in x]
@@ -79,13 +79,13 @@ for label,width,height,fps in [('audio',320,240,24),('1080p60',1920,1080,60),('V
  run('ffmpeg','-v','error','-threads','1','-i',str(dest),'-f','null','-')
  results.append({'case':label,'passed':True,'time_to_host_seconds_including_ui_dump':round(request_seconds,2),'streams':probe['streams']});print('PASS',label,request_seconds,flush=True)
  time.sleep(2)
-tap(seek('▤  Recent'));seek('Your collection');seek('Open');shot('recent-saved')
-tap(seek('↓  Download'));seek('1080p60 · Gallery safe')
+tap(seek('Recent'));seek('Your collection');seek('Open');shot('recent-saved')
+tap(seek('Download'));seek('1080p60 · Gallery safe')
 # Restore the selected quality and draft after process restart.
 adb('shell','input','keyevent','3');time.sleep(1);adb('shell','am','force-stop','com.pocketaudio.app');adb('shell','am','start','-W','-n','com.pocketaudio.app/.MainActivity');time.sleep(2);seek('1080p60 · Gallery safe');seek('http://10.0.2.2:8765/AV1.html');shot('home-final')
 # Verify actual Android decoding, beyond a desktop FFmpeg codec check.
 adb('install','-r',str(root/'app/build/outputs/apk/androidTest/release/app-release-androidTest.apk'))
 playback=adb('shell','am','instrument','-w','com.pocketaudio.app.test/com.pocketaudio.app.PlaybackChecks');print(playback);assert 'ANDROID_VISIBLE_FRAMES_PASS count=3' in playback,playback
 # Structured About screen.
-adb('shell','am','start','-W','-n','com.pocketaudio.app/.MainActivity');time.sleep(2);tap(seek('⚙  Settings'));tap(seek('About & open-source licenses'));seek('How it works');shot('about');adb('shell','input','keyevent','4');tap(seek('↓  Download'))
-results.append({'case':'separate_tabs_draft_restore_about_android_playback','passed':True});(out/'verification.json').write_text(json.dumps(results,indent=2));print('ALL V5 TESTS PASSED',flush=True)
+adb('shell','am','start','-W','-n','com.pocketaudio.app/.MainActivity');time.sleep(2);tap(seek('Settings'));tap(seek('About & open-source licenses'));seek('How it works');shot('about');adb('shell','input','keyevent','4');tap(seek('Download'))
+results.append({'case':'separate_tabs_draft_restore_about_android_playback','passed':True});(out/'verification.json').write_text(json.dumps(results,indent=2));print('ALL V7 TESTS PASSED',flush=True)
