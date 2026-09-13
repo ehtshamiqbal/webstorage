@@ -28,7 +28,7 @@ jobs:
           python3 scripts/prepare_lame.py
           python3 scripts/prepare_engine.py
       - name: Build and lint
-        run: gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease
+        run: gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease :app:writeTestSigningPath
       - name: Compact ABI packages without changing runtime codecs
         run: python3 scripts/compact_apks.py
       - name: Verify APK signature

@@ -2,6 +2,8 @@
 import io,zipfile,pathlib,subprocess as sp,os,json
 root=pathlib.Path(__file__).resolve().parents[1]
 sdk=pathlib.Path(os.environ['ANDROID_HOME'])/'build-tools/35.0.0'
+keystore=pathlib.Path((root/'app/build/test-signing-path.txt').read_text().strip())
+assert keystore.is_file(),'Gradle test signing key is missing'
 reports=[]
 for apk in sorted((root/'app/build/outputs/apk/release').glob('*.apk')):
     before=apk.stat().st_size;stage=apk.with_suffix('.compact');removed=[]
@@ -26,7 +28,7 @@ for apk in sorted((root/'app/build/outputs/apk/release').glob('*.apk')):
             dst.writestr(info,data,compress_type=info.compress_type,compresslevel=9)
     aligned=apk.with_suffix('.aligned')
     sp.run([str(sdk/'zipalign'),'-f','-P','16','4',str(stage),str(aligned)],check=True)
-    sp.run([str(sdk/'apksigner'),'sign','--ks',str(pathlib.Path.home()/'.android/debug.keystore'),'--ks-pass','pass:android','--key-pass','pass:android','--out',str(apk),str(aligned)],check=True)
+    sp.run([str(sdk/'apksigner'),'sign','--ks',str(keystore),'--ks-pass','pass:android','--key-pass','pass:android','--out',str(apk),str(aligned)],check=True)
     sp.run([str(sdk/'apksigner'),'verify',str(apk)],check=True)
     stage.unlink();aligned.unlink()
     reports.append({'apk':apk.name,'before_bytes':before,'after_bytes':apk.stat().st_size,'removed_static_archives':removed})
