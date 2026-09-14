@@ -1,30 +1,35 @@
-# Pocket Media 6.0
+# Pocket Media 7.0 — compact Android packages
 
-Android audio/video downloader with original-title filenames, Gallery-safe H.264/AAC modes, separate Download / Recent / Settings tabs, an animated splash and a Liquid Glass-inspired Android interface. The material samples a cached, diffused background with slight magnification and edge lighting; this is not Apple's native material or a general live-content blur engine.
+V7 retains V6's on-device MP3/MP4 download and conversion engine, original-title filenames, Gallery-safe quality modes, platform-session import and separate tabs.
 
-## Install and compatibility
+## Install
 
-Android 10 (API 29) or newer. Universal APK includes arm64-v8a, armeabi-v7a and x86_64. Version code 6. The distributed APK uses the same permanent signing certificate as V5, so V5 can be updated in place. V4 uses a different certificate and must be removed first. Do not disable platform security protections. Generic warnings for sideloaded APKs can remain; no universal device guarantee is made.
+Android 10 or newer. Choose the APK matching the phone's Android ABI: ARM64 for a 64-bit ARM system, ARM32 for a 32-bit ARM system. Both are complete installable APKs; they are alternatives, not files to install together. Processor hardware alone does not establish whether the installed Android OS is 32- or 64-bit. The same permanent certificate as V5/V6 allows an in-place update. V4 used a different certificate.
 
-## Download support
+## Size
 
-The build bundles checksum-verified yt-dlp 2026.08.19 and installs it once on upgrade. Manual engine updates remain available in Settings. Generic cookie warnings are no longer automatically classified as login failures; authentication, unavailable content, rate limits and player changes have separate explanations. Server-side authentication, entitlement, geographic restrictions and anti-bot checks are still controlled by the platform.
+V6 universal APK: 159937510 bytes. V7 ARM64: 54038373 bytes (51.54 MiB); ARM32: 47484785 bytes (45.29 MiB). About 66% / 70% smaller downloads, respectively.
 
-For a login-required video your account can access, Settings > Platform connection optionally imports a Netscape-format cookies.txt exported from your own browser. Treat the file like a password and never share it. Only supported platform domains and non-expired cookies are retained. Sessions stay in app-private, non-backed-up storage and can be removed in Settings. This is not an embedded sign-in flow or a way to unlock restricted content. Public downloads do not require an app account.
+Installed storage is higher than APK size because native packages unpack, Android optimizes code, and caches accumulate. These are APK measurements, not a claim that installed storage is 45–52 MiB.
 
-## Quality and speed
+Changes: ABI-specific APKs; lossless ZIP compression; remove unused static .a archives; remove unused JNI MP3 bridge (current conversion uses FFmpeg's encoder); replace duplicate engine assets with one raw resource. Every retained runtime archive entry is checked byte-for-byte during packaging. No runtime codec, resolution option or server-side conversion dependency was introduced or removed.
 
-720p/1080p Gallery-safe modes prefer H.264/AAC and transcode incompatible tracks as needed. 1080p60 has a separate choice. Best / 4K / 6K / 8K Original preserve source codecs and depend on player/device capabilities. No upscaling or instant-download claim is made. Initialization, extractor caching and concurrent fragments remain; unchanged UI state is no longer repeatedly rendered.
+## Interface
+
+Stronger edge refraction using a cached bitmap mesh, translucent layers, press highlights and drawn navigation icons. This is an Android interpretation inspired by Liquid Glass, not Apple's native renderer or full live-content backdrop blur.
 
 ## Build
 
-JDK 17, Gradle 8.11.1, Android SDK 35, NDK 28.0.13004108, CMake 3.22.1.
+JDK 17, Gradle 8.11.1 and Android SDK 35.
 
 ```sh
 cd PocketAudio
 python3 scripts/prepare_lame.py
 python3 scripts/prepare_engine.py
-gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease
+gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease :app:writeTestSigningPath
+python3 scripts/compact_apks.py
 ```
 
-CI signs a non-debuggable release with a temporary certificate for instrumentation. Distribution requires re-signing with the retained permanent key. Never commit private keys, passwords or browser sessions. See VALIDATION.md. License: GPL-3.0 and applicable upstream notices.
+The LAME preparation step supplies license assets; its old JNI bridge is no longer built. Packaging uses Gradle's CI test key. Distribution APKs must be signed with the privately retained permanent key; do not publish signing keys, passwords or browser sessions.
+
+Platform authentication, entitlement and anti-bot checks remain controlled by the platform. Optional browser sessions stay in private non-backed-up storage. See VALIDATION.md for test scope. GPL-3.0 and applicable upstream licenses.
