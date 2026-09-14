@@ -1,0 +1,85 @@
+name: Build installable APK
+on: [workflow_dispatch, pull_request]
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PocketAudio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Install Android build tools
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;28.0.13004108' 'cmake;3.22.1'
+      - name: Download MP3 encoder source
+        run: |
+          python3 scripts/prepare_lame.py
+          python3 scripts/prepare_engine.py
+      - name: Build and lint
+        run: gradle --no-daemon assembleRelease assembleReleaseAndroidTest lintRelease :app:writeTestSigningPath
+      - name: Compact ABI packages without changing runtime codecs
+        run: python3 scripts/compact_apks.py
+      - name: Verify APK signature
+        run: "$ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-x86_64-release.apk"
+      - name: Stage signing tool and validate APK packaging
+        run: |
+          mkdir -p signing-tools
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" signing-tools/apksigner.jar
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 app/build/outputs/apk/release/app-x86_64-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/release/app-x86_64-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PocketMedia-Signing-Tool
+          path: PocketAudio/signing-tools
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PocketAudio-APK
+          path: PocketAudio/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+      - name: Install media verification tools
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and test conversion on Android 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          working-directory: PocketAudio
+          disable-animations: true
+          script: python3 scripts/smoke5.py
+      - name: Verify Android 10 installation and update
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          working-directory: PocketAudio
+          disable-animations: true
+          script: python3 scripts/verify_install.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PocketAudio-Verification
+          path: |
+            PocketAudio/smoke-results
+            PocketAudio/install-results
+            PocketAudio/size-report.json
